@@ -55,10 +55,10 @@ const main = async () => {
         .setPayableAmount(20) // Increase if revert
         .setFunction("createFungible", 
             new ContractFunctionParameters()
-            .addString("USD Bar") // FT name
-            .addString("USDB") // FT symbol
-            .addUint256(1000000000) // FT initial supply
-            .addUint256(2) // FT decimals
+            .addString("Pengupals") // FT name
+            .addString("PAL") // FT symbol
+            .addUint256(2147483647 * 10**8) // FT initial supply
+            .addUint256(8) // FT decimals
             .addUint32(7000000)); // auto renew period
 
     const createTokenTx = await createToken.execute(client);
