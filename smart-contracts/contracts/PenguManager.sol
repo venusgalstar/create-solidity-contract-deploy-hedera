@@ -71,6 +71,8 @@ contract PenguManaer is ExpiryHelper {
 
         int response2 = HederaTokenService.transferNFT(penguNFTTokenAddress, msg.sender, address(this), nftID);
 
+        require(response2 == SUCCESS, "Failed to Transfer NFT to this contract");
+
         RewardNFTInfo memory newStakedNFT;
         newStakedNFT.id = nftID;
         newStakedNFT.startTime = block.timestamp;
@@ -86,12 +88,28 @@ contract PenguManaer is ExpiryHelper {
         require(stakedNFTInfo[nftID] == true, "Not Staked!");
 
         uint256 idx;
+        int response1;
+        int response2;
 
         for( idx = 0; idx < rewardUserInfo[msg.sender].length; idx++ )
         {
             if( rewardUserInfo[msg.sender][idx].id != nftID || rewardUserInfo[msg.sender][idx].owner != msg.sender )
                 continue;
-            //give reward to user, transfer nft to user
+            //give reward to user, 
+            uint256 rewardAmount = (block.timestamp - rewardUserInfo[msg.sender][idx].lastClaimTime) * dailyReward;
+
+            response1 = HederaTokenService.associateToken(address(this), penguPalTokenAddress);
+            require(response1 == SUCCESS, "Failed to Associate Pengupal this contract");
+    
+            response2 = HederaTokenService.transferToken(penguPalTokenAddress, address(this), msg.sender, rewardAmount);    
+            require(response2 == SUCCESS, "Failed to Transfer Pengupal to msg.sender");
+
+            //transfer nft to user
+            response1 = HederaTokenService.associateToken(address(this), penguNFTTokenAddress);
+            require(response1 == SUCCESS, "Failed to Associate NFT this contract");
+    
+            response2 = HederaTokenService.transferNFT(penguNFTTokenAddress, address(this), msg.sender, rewardUserInfo[msg.sender][idx].id);    
+            require(response2 == SUCCESS, "Failed to Transfer NFT to this contract");
 
             rewardUserInfo[msg.sender][idx] = rewardUserInfo[msg.sender][rewardUserInfo[msg.sender].length -1];
             rewardUserInfo[msg.sender].pop();
@@ -115,10 +133,17 @@ contract PenguManaer is ExpiryHelper {
 
         if( goldenNFTCount > 0 )
         {
-            rewaredSum *= goldenNFTCount * 2;
+            rewardSum *= goldenNFTCount * 2;
         }
 
+        require(rewardSum != 0, "No reward to this user!");
+
         //transfer reward to user
+        response1 = HederaTokenService.associateToken(address(this), penguPalTokenAddress);
+        require(response1 == SUCCESS, "Failed to Associate Pengupal this contract");
+
+        response2 = HederaTokenService.transferToken(penguPalTokenAddress, address(this), msg.sender, rewardSum);    
+        require(response2 == SUCCESS, "Failed to Transfer Pengupal to msg.sender");
 
     }
     
