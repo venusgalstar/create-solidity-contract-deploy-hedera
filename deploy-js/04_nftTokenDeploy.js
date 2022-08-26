@@ -62,9 +62,6 @@ async function main() {
         .setTokenId(tokenId)
         .setMetadata([Buffer.from(CID)])
         .freezeWith(client);
-
-    // console.log("Glinton log >>>> [Buffer.from(CID)] : ", Buffer.from(CID));
-
     //Sign the transaction with the supply key
     let mintTxSign = await mintTx.sign(supplyKey);
     //Submit the transaction to a Hedera network
