@@ -26,6 +26,17 @@ const client = Client.forTestnet().setOperator(operatorId, operatorKey);
 
 const supplyKey = PrivateKey.generate();
 
+async function tokenMinterFcn(tokenId, CID) {
+    mintTx = await new TokenMintTransaction()
+        .setTokenId(tokenId)
+        .setMetadata([Buffer.from(CID)])
+        .freezeWith(client);
+    let mintTxSign = await mintTx.sign(supplyKey);
+    let mintTxSubmit = await mintTxSign.execute(client);
+    let mintRx = await mintTxSubmit.getReceipt(client);
+    return mintRx;
+}
+
 async function main() {
 
     //Create the NFT
@@ -55,21 +66,38 @@ async function main() {
     // let tokenId = TokenId.fromString("0.0.48004573");
 
     //IPFS content identifiers for which we will create a NFT
-    CID = "ipfs://QmWNttMTSYVGxZoXZfsmiEJfKoAcSfP2WoTo6JaSShq7aQ/1.json";
+    CID = [
+        "ipfs://QmWNttMTSYVGxZoXZfsmiEJfKoAcSfP2WoTo6JaSShq7aQ/1.json",
+        "ipfs://QmWNttMTSYVGxZoXZfsmiEJfKoAcSfP2WoTo6JaSShq7aQ/2.json",
+        "ipfs://QmWNttMTSYVGxZoXZfsmiEJfKoAcSfP2WoTo6JaSShq7aQ/3.json",
+        "ipfs://QmWNttMTSYVGxZoXZfsmiEJfKoAcSfP2WoTo6JaSShq7aQ/4.json",
+        "ipfs://QmWNttMTSYVGxZoXZfsmiEJfKoAcSfP2WoTo6JaSShq7aQ/5.json",
+        "ipfs://QmWNttMTSYVGxZoXZfsmiEJfKoAcSfP2WoTo6JaSShq7aQ/6.json",
+        "ipfs://QmWNttMTSYVGxZoXZfsmiEJfKoAcSfP2WoTo6JaSShq7aQ/7.json",
+        "ipfs://QmWNttMTSYVGxZoXZfsmiEJfKoAcSfP2WoTo6JaSShq7aQ/8.json",
+        "ipfs://QmWNttMTSYVGxZoXZfsmiEJfKoAcSfP2WoTo6JaSShq7aQ/9.json",
+        "ipfs://QmWNttMTSYVGxZoXZfsmiEJfKoAcSfP2WoTo6JaSShq7aQ/10.json"
+    ];
 
-    // Mint new NFT
-    let mintTx = await new TokenMintTransaction()
-        .setTokenId(tokenId)
-        .setMetadata([Buffer.from(CID)])
-        .freezeWith(client);
-    //Sign the transaction with the supply key
-    let mintTxSign = await mintTx.sign(supplyKey);
-    //Submit the transaction to a Hedera network
-    let mintTxSubmit = await mintTxSign.execute(client);
-    //Get the transaction receipt
-    let mintRx = await mintTxSubmit.getReceipt(client);
-    //Log the serial number
-    console.log(`- Created NFT ${tokenId} with serial: ${mintRx.serials[0].low} \n`);
+    nftLeaf = [];
+    for (var i = 0; i < CID.length; i++) {
+        nftLeaf[i] = await tokenMinterFcn(tokenId, CID[i]);
+        console.log(`Created NFT ${tokenId} with serial: ${nftLeaf[i].serials[0].low}`);
+    }
+
+    // // Mint new NFT
+    // let mintTx = await new TokenMintTransaction()
+    //     .setTokenId(tokenId)
+    //     .setMetadata([Buffer.from(CID)])
+    //     .freezeWith(client);
+    // //Sign the transaction with the supply key
+    // let mintTxSign = await mintTx.sign(supplyKey);
+    // //Submit the transaction to a Hedera network
+    // let mintTxSubmit = await mintTxSign.execute(client);
+    // //Get the transaction receipt
+    // let mintRx = await mintTxSubmit.getReceipt(client);
+    // //Log the serial number
+    // console.log(`- Created NFT ${tokenId} with serial: ${mintRx.serials[0].low} \n`);
 
 
     /*
