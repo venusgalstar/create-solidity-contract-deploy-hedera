@@ -1,10 +1,11 @@
+// @Glinton added this code on Aug 26, 2022.
+// This is perfect code
 console.clear();
 require("dotenv").config();
 const {
     AccountId,
     PrivateKey,
     Client,
-    TokenId,
     TokenCreateTransaction,
     TokenType,
     TokenSupplyType,
@@ -36,6 +37,17 @@ async function tokenMinterFcn(tokenId, CID) {
     let mintRx = await mintTxSubmit.getReceipt(client);
     return mintRx;
 }
+
+async function tokenTransferFcn(tokenId, serialNumber, from, to, fromPvKey) {
+    let tokenTransferTx = await new TransferTransaction()
+        .addNftTransfer(tokenId, serialNumber, from, to)
+        .freezeWith(client)
+        .sign(fromPvKey);
+    let tokenTransferSubmit = await tokenTransferTx.execute(client);
+    let tokenTransferRx = await tokenTransferSubmit.getReceipt(client);
+    return tokenTransferRx;
+}
+
 
 async function main() {
 
@@ -85,63 +97,42 @@ async function main() {
         console.log(`Created NFT ${tokenId} with serial: ${nftLeaf[i].serials[0].low}`);
     }
 
-    // // Mint new NFT
-    // let mintTx = await new TokenMintTransaction()
-    //     .setTokenId(tokenId)
-    //     .setMetadata([Buffer.from(CID)])
-    //     .freezeWith(client);
-    // //Sign the transaction with the supply key
-    // let mintTxSign = await mintTx.sign(supplyKey);
-    // //Submit the transaction to a Hedera network
-    // let mintTxSubmit = await mintTxSign.execute(client);
-    // //Get the transaction receipt
-    // let mintRx = await mintTxSubmit.getReceipt(client);
-    // //Log the serial number
-    // console.log(`- Created NFT ${tokenId} with serial: ${mintRx.serials[0].low} \n`);
+
+    console.log(`Glinton log >>>>> [tokenId] : ${[tokenId]}`);
+
+    //Create the associate transaction and sign with Alice's key 
+    let associateAliceTx = await new TokenAssociateTransaction()
+        .setAccountId(aliceId)
+        .setTokenIds([tokenId])
+        .freezeWith(client)
+        .sign(aliceKey);
+    //Submit the transaction to a Hedera network
+    let associateAliceTxSubmit = await associateAliceTx.execute(client);
+    //Get the transaction receipt
+    let associateAliceRx = await associateAliceTxSubmit.getReceipt(client);
+    //Confirm the transaction was successful
+    console.log(`- NFT association with Alice's account: ${associateAliceRx.status}\n`);
+
+    // Check the balance before the transfer for the treasury account
+    var balanceCheckTx = await new AccountBalanceQuery().setAccountId(treasuryId).execute(client);
+    console.log(`- Treasury balance: ${balanceCheckTx.tokens._map.get(tokenId.toString())} NFTs of ID ${tokenId}`);
+    // Check the balance before the transfer for Alice's account
+    var balanceCheckTx = await new AccountBalanceQuery().setAccountId(aliceId).execute(client);
+    console.log(`- Alice's balance: ${balanceCheckTx.tokens._map.get(tokenId.toString())} NFTs of ID ${tokenId}`);
 
 
-    /*
-        //Create the associate transaction and sign with Alice's key 
-        let associateAliceTx = await new TokenAssociateTransaction()
-            .setAccountId(aliceId)
-            .setTokenIds([tokenId])
-            .freezeWith(client)
-            .sign(aliceKey);
-        //Submit the transaction to a Hedera network
-        let associateAliceTxSubmit = await associateAliceTx.execute(client);
-        //Get the transaction receipt
-        let associateAliceRx = await associateAliceTxSubmit.getReceipt(client);
-        //Confirm the transaction was successful
-        console.log(`- NFT association with Alice's account: ${associateAliceRx.status}\n`);
-        // Check the balance before the transfer for the treasury account
-        var balanceCheckTx = await new AccountBalanceQuery().setAccountId(treasuryId).execute(client);
-        console.log(`- Treasury balance: ${balanceCheckTx.tokens._map.get(tokenId.toString())} NFTs of ID ${tokenId}`);
-        // Check the balance before the transfer for Alice's account
-        var balanceCheckTx = await new AccountBalanceQuery().setAccountId(aliceId).execute(client);
-        console.log(`- Alice's balance: ${balanceCheckTx.tokens._map.get(tokenId.toString())} NFTs of ID ${tokenId}`);
-    */
+    for (var i = 0; i < CID.length; i++) {
+        var tokenTransferRx = await tokenTransferFcn(tokenId, i + 1, treasuryId, aliceId, treasuryKey);
+        console.log(`- NFT transfer from Treasury to Alice: ${tokenTransferRx.status}`);
+    }
 
+    // Check the balance of the treasury account after the transfer
+    var balanceCheckTx = await new AccountBalanceQuery().setAccountId(treasuryId).execute(client);
+    console.log(`- Treasury balance: ${balanceCheckTx.tokens._map.get(tokenId.toString())} NFTs of ID ${tokenId}`);
 
-    /*
-        // Transfer the NFT from treasury to Alice
-        // Sign with the treasury key to authorize the transfer
-        let tokenTransferTx = await new TransferTransaction()
-            .addNftTransfer(tokenId, 1, treasuryId, aliceId)
-            .freezeWith(client)
-            .sign(treasuryKey);
-    
-        let tokenTransferSubmit = await tokenTransferTx.execute(client);
-        let tokenTransferRx = await tokenTransferSubmit.getReceipt(client);
-    
-        console.log(`\n- NFT transfer from Treasury to Alice: ${tokenTransferRx.status} \n`);
-    
-        // Check the balance of the treasury account after the transfer
-        var balanceCheckTx = await new AccountBalanceQuery().setAccountId(treasuryId).execute(client);
-        console.log(`- Treasury balance: ${balanceCheckTx.tokens._map.get(tokenId.toString())} NFTs of ID ${tokenId}`);
-    
-        // Check the balance of Alice's account after the transfer
-        var balanceCheckTx = await new AccountBalanceQuery().setAccountId(aliceId).execute(client);
-        console.log(`- Alice's balance: ${balanceCheckTx.tokens._map.get(tokenId.toString())} NFTs of ID ${tokenId}`);
-    */
+    // Check the balance of Alice's account after the transfer
+    var balanceCheckTx = await new AccountBalanceQuery().setAccountId(aliceId).execute(client);
+    console.log(`- Alice's balance: ${balanceCheckTx.tokens._map.get(tokenId.toString())} NFTs of ID ${tokenId}`);
+
 }
 main();
