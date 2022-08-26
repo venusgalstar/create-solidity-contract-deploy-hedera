@@ -39,6 +39,9 @@ const main = async () => {
     const treasuryKey = PrivateKey.generateED25519();
     const treasuryId = await accountCreator(treasuryKey, 10);
 
+    console.log(`Glinton log >>>>> treasuryId: ${treasuryId}`);
+    console.log(`Glinton log >>>>> treasuryKey: ${treasuryKey}`);
+
     const createContract = new ContractCreateFlow()
         .setGas(150000) // Increase if revert
         .setBytecode(bytecode); // Contract bytecode
