@@ -157,6 +157,16 @@ contract PenguManaer is ExpiryHelper {
         stakedNFTGoldInfo[nftID] = true;
     }
 
+    function getStakedNFT() external returns(RewardNFTInfo[] memory)
+    {
+        return stakedNFTInfo[msg.sender];
+    }
+
+    function getStakedGoldNFT() external returns(RewardNFTInfo[] memory)
+    {
+        return stakedNFTGoldInfo[msg.sender];
+    }
+
     function unstakeGoldNFT(int64 nftID) external{
         require(stakedNFTGoldInfo[nftID] == true, "Not Staked!");
 
